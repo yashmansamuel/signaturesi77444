@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEO L1.0 | Signaturesi Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+body { background-color: #020617; font-family: 'Space Grotesk', sans-serif; color: #f8fafc; }
+.glass { background: rgba(15,23,42,0.6); backdrop-filter: blur(15px); border:1px solid rgba(255,255,255,0.05); }
+.neon-glow { text-shadow:0 0 10px #38bdf8,0 0 20px #38bdf8;color:#38bdf8; }
+.btn-glow:hover { box-shadow:0 0 25px rgba(56,189,248,0.4); transform: scale(1.02); }
+.card-border { border-left:5px solid #38bdf8; transition:0.3s; }
+</style>
+</head>
+<body class="p-4 md:p-12 flex flex-col items-center">
+
+<div class="max-w-4xl w-full mx-auto">
+    <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold mb-2">NEO <span class="neon-glow">L1.0</span></h1>
+        <p class="text-slate-500 uppercase text-xs tracking-[0.5em]">Signaturesi Intelligence System</p>
+    </div>
+
+    <!-- Login / Auth Section -->
+    <div id="login-section" class="glass p-10 rounded-[2.5rem] text-center max-w-md mx-auto shadow-2xl">
+        <h2 class="text-2xl font-bold mb-6">System Authentication</h2>
+        <input type="text" id="userKey" placeholder="sig-live-xxxx" class="w-full p-5 rounded-2xl mb-4 bg-slate-950 border border-slate-800 text-sky-300 font-mono text-center">
+        <button onclick="authSystem()" id="loginBtn" class="btn-glow w-full bg-sky-600 py-4 rounded-2xl text-white font-bold mb-2">Connect Neural Link</button>
+        <button onclick="createApiKey()" class="w-full bg-emerald-600 py-3 rounded-2xl text-white font-bold">Generate New API Key</button>
+        <p class="text-[10px] text-slate-500 mt-4">Authorized Access Only</p>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dash-section" class="hidden space-y-8">
+        <div class="glass p-8 rounded-[2.5rem]">
+            <h2 class="text-3xl font-bold mb-2">Token Balance: <span id="tokenText">0</span></h2>
+            <p class="text-slate-500 text-sm">Your API Key Status</p>
+        </div>
+        <div class="glass p-8 rounded-[2.5rem]">
+            <h2 class="text-2xl font-bold mb-2">Your API Key</h2>
+            <p id="currentKey" class="font-mono break-all text-sky-400"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+
+// -------------------- Connect Existing API Key --------------------
+async function authSystem() {
+    const key = document.getElementById('userKey').value.trim();
+    if(!key){ alert("Provide API Key"); return; }
+
+    const tokenText = document.getElementById('tokenText');
+    const currentKey = document.getElementById('currentKey');
+    const loginBtn = document.getElementById('loginBtn');
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Connecting...";
+
+    try {
+        const res = await fetch(`${API_BASE}/v1/user/balance?api_key=${key}`);
+        const data = await res.json();
+
+        if(res.ok){
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dash-section').classList.remove('hidden');
+            tokenText.textContent = data.balance;
+            currentKey.textContent = key;
+        } else {
+            alert(data.detail || "Invalid Key");
+        }
+    } catch(err){
+        alert("Cannot connect backend");
+        console.error(err);
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Connect Neural Link";
+    }
+}
+
+// -------------------- Auto-Generate API Key --------------------
+async function createApiKey(){
+    try{
+        const res = await fetch(`${API_BASE}/admin/generate-key`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tokens: 1000, admin_pass: "signaturesi_boss_786" }) // backend handles it
+        });
+
+        const data = await res.json();
+
+        if(res.ok){
+            alert(`New API Key: ${data.new_api_key}\nBalance: ${data.tokens}`);
+            const keyInput = document.getElementById('userKey');
+            keyInput.value = data.new_api_key;
+            authSystem(); // automatically log in with new key
+        } else {
+            alert(data.detail || "Failed to generate API Key");
+        }
+    } catch(err){
+        alert("Cannot create API Key");
+        console.error(err);
+    }
+}
+</script>
+
+</body>
+</html>

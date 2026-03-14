@@ -1,0 +1,4 @@
+fastapi
+supabase
+pydantic
+cerebras-cloud-sdk
